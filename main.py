@@ -1,11 +1,12 @@
 from pathlib import Path
+from argparse import ArgumentParser
 
-from transformers import AutoModelForCausalLM, AutoTokenizer
 import faiss
 import numpy as np
 from ollama import embed, generate
+from pypdf import PdfReader
 
-def main():
+def main(N: int = 5):
     model_name = "llama3.2"
     knowledge_base = Path("./openui-docs")
 
@@ -26,8 +27,7 @@ def main():
     index = faiss.IndexFlatL2(embeddings.shape[1])
     index.add(embeddings)
 
-    query = "How do I setup the environment ?"
-
+    query = "How do I setup a RAG model ?"
     # retrieve documents
     print("start retrieving")
     N = 5
@@ -44,4 +44,7 @@ def main():
 
 
 if (__name__) == "__main__":
-    main()
+    parser = ArgumentParser()
+    parser.add_argument("-N", type=int, default=5)
+    args = parser.parse_args()
+    main(args.N)
