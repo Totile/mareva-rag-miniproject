@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import faiss
 import numpy as np
@@ -5,11 +7,14 @@ from ollama import embed, generate
 
 def main():
     model_name = "llama3.2"
+    knowledge_base = Path("./openui-docs")
 
-    with open(
-        "../openui-docs/docs/getting-started/advanced-topics/env-configuration.md", "r"
-    ) as f:
-        documents = [f.read()]
+    documents = []
+    for p in knowledge_base.rglob("*"):
+        if p.is_file() & (p.suffix == ".md"):
+            documents.append(p.read_text())
+            print(p.name)
+    print(f"found {len(documents)} documents")
 
     print(f"start embedding")
     embeddings: np.ndarray = [
@@ -25,7 +30,7 @@ def main():
 
     # retrieve documents
     print("start retrieving")
-    N = 1
+    N = 5
     query_embeddings = embed(model=model_name, input=query)["embeddings"]
     _, indices = index.search(np.array((query_embeddings)), N)
     print(indices)
@@ -34,6 +39,7 @@ def main():
     print("infer")
     augmented_query = f"Query: {query},\nDocuments: {'; '.join(retrieved_documents)}"
     response = generate(model=model_name,prompt=augmented_query)
+    print(f"used {retrieved_documents}")
     print(response["response"])
 
 
